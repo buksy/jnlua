@@ -1,0 +1,5 @@
+target
+*.so
+*.o
+*.class
+*.svn
