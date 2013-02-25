@@ -3,3 +3,4 @@ target
 *.o
 *.class
 *.svn
+*.jnilib

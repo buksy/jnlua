@@ -16,9 +16,12 @@
 #include <stddef.h>
 #define JNLUA_THREADLOCAL static __declspec(thread)
 #endif
-#ifdef LUA_USE_POSIX
+#ifdef LUA_USE_LINUX
 #include <stdint.h>
 #define JNLUA_THREADLOCAL static __thread
+#endif
+#ifdef LUA_USE_MACOSX
+#define JNLUA_THREADLOCAL static 
 #endif
 
 /* ---- Definitions ---- */
