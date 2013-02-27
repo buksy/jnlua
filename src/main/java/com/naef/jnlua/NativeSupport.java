@@ -5,6 +5,8 @@
 
 package com.naef.jnlua;
 
+import java.net.URL;
+
 /**
  * Loads the JNLua native library.
  * 
@@ -73,7 +75,9 @@ public final class NativeSupport {
 	private class DefaultLoader implements Loader {
 		@Override
 		public void load() {
-			System.loadLibrary("jnlua52");
+			String path = "native/"+(System.getProperty("os.name")).replaceAll(" ", "")+"/libjnlua52";
+			URL url = ClassLoader.getSystemClassLoader().getResource(path);
+			System.load(url.getPath());
 		}
 	}
 }

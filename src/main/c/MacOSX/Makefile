@@ -17,6 +17,8 @@ all: libjnlua$(VERSION).jnilib
 
 libjnlua$(VERSION).jnilib: jnlua.o
 	$(LD) $(LDFLAGS) -o libjnlua$(VERSION).jnilib -L$(LUA_LIB_DIR) -lc -llua$(VERSION) jnlua.o
+	mkdir -p ../../resources/native/MacOSX
+	cp libjnlua$(VERSION).jnilib ../../resources/native/MacOSX/libjnlua$(VERSION)
 
 jnlua.o: ../jnlua.c
 	$(CC) $(CFLAGS) -I$(JDK_DIR)/Headers -I$(LUA_INC_DIR) ../jnlua.c
