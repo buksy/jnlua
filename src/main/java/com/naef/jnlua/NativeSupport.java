@@ -5,6 +5,10 @@
 
 package com.naef.jnlua;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 
 /**
@@ -75,9 +79,29 @@ public final class NativeSupport {
 	private class DefaultLoader implements Loader {
 		@Override
 		public void load() {
+			
 			String path = "native/"+(System.getProperty("os.name")).replaceAll(" ", "")+"/libjnlua52";
 			URL url = ClassLoader.getSystemClassLoader().getResource(path);
-			System.load(url.getPath());
+			    InputStream in = ClassLoader.getSystemClassLoader().getResourceAsStream(path);
+			    byte[] buffer = new byte[1024];
+			    int read = -1;
+			    Object name;
+				File temp = null;
+				try {
+					temp = File.createTempFile(System.currentTimeMillis()+"", "");
+					FileOutputStream fos = new FileOutputStream(temp);
+
+					while((read = in.read(buffer)) != -1) {
+					       fos.write(buffer, 0, read);
+					}
+					fos.close();
+					in.close();
+				} catch (IOException e) {
+					
+					e.printStackTrace();
+				}
+			   
+			    System.load(temp.getAbsolutePath());
 		}
 	}
 }
