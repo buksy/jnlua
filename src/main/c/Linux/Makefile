@@ -19,6 +19,9 @@ all: libjnlua$(VERSION).so javavm.so
 
 libjnlua$(VERSION).so: jnlua.o
 	$(LD) $(LDFLAGS) -Wl,-soname=libjnlua$(VERSION).so -olibjnlua$(VERSION).so -L$(LUA_LIB_DIR) jnlua.o -lc -llua$(LUA_VERSION)
+	mkdir -p ../../resources/native/Linux
+	cp libjnlua$(VERSION).so ../../resources/native/Linux/libjnlua$(VERSION)
+
 
 jnlua.o: ../jnlua.c
 	$(CC) $(CFLAGS) -I$(JDK_DIR)/include -I$(JDK_DIR)/include/linux -I$(LUA_INC_DIR) ../jnlua.c
