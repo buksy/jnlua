@@ -2180,6 +2180,24 @@ public class LuaState {
 			}
 		}
 	}
+	
+	/**
+	 * This open up's a module 3 party module via jnlua, this pretty much remove the requirement of using package 
+	 * This will be useful if you are building sandbox environment 
+	 * @param moduleName 
+	 * 			the Name of the module 
+	 * @param modulePath 
+	 * 			the path where you can find the module implementation 
+	 * @param isCmodule
+	 * 			indicates if the module is implemented in C or not 
+	 */
+	public void openModule (String moduleName , String modulePath, boolean isCmodule) {
+		if (isCmodule) {
+			String modFunc = String.format("luaopen_%s", moduleName);
+			lua_open_C_module(moduleName, modFunc, modulePath); 
+		}else
+			lua_open_LUA_module(moduleName, modulePath);
+	}
 
 	// -- Private methods
 	/**
@@ -2426,6 +2444,10 @@ public class LuaState {
 	private native int lua_tablesize(int index);
 
 	private native void lua_tablemove(int index, int from, int to, int count);
+	
+	private native int lua_open_C_module (String modName, String modFunc, String modulePath);
+	
+	private native int lua_open_LUA_module (String modName, String modpath);
 
 	// -- Enumerated types
 	/**

@@ -362,6 +362,74 @@ JNIEXPORT void JNICALL Java_com_naef_jnlua_LuaState_lua_1openlib (JNIEnv *env, j
 	}
 }
 
+/* lua_open_C_module */
+JNIEXPORT jint JNICALL Java_com_naef_jnlua_LuaState_lua_1open_1C_1module
+(JNIEnv *env, jobject obj, jstring mod_name, jstring load_func, jstring mod_file){
+	lua_State *L;
+	
+	char *module_load_func = NULL;
+	char *module_file = NULL;
+	char *module_name = NULL;
+	
+	JNLUA_ENV(env);
+	L = getluathread(obj);
+	if (checkstack(L, JNLUA_MINSTACK)
+		&& (module_load_func = getstringchars(load_func)) 
+		&& (module_file = getstringchars(mod_file))
+		&& (module_name = getstringchars(mod_name))) {
+		
+		JNLUA_PCALL(L, 0, 1);
+	}
+	if (module_load_func) {
+		releasestringchars(load_func, module_load_func);
+	}
+	if (module_file) {
+		releasestringchars(load_func, module_file);
+	}
+	if (module_name) {
+		releasestringchars(mod_name, module_name);
+	}
+	
+	return 0;
+}
+
+/*
+ * Class:     com_naef_jnlua_LuaState
+ * Method:    lua_open_LUA_module
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_com_naef_jnlua_LuaState_lua_1open_1LUA_1module
+(JNIEnv *env, jobject obj, jstring mod_name, jstring mod_file){
+	lua_State *L;
+	
+	lua_State *L;
+	
+	char *module_load_func = NULL;
+	char *module_file = NULL;
+	char *module_name = NULL;
+	
+	JNLUA_ENV(env);
+	L = getluathread(obj);
+	if (checkstack(L, JNLUA_MINSTACK)
+		&& (module_load_func = getstringchars(load_func)) 
+		&& (module_file = getstringchars(mod_file))
+		&& (module_name = getstringchars(mod_name))) {
+		
+		JNLUA_PCALL(L, 0, 1);
+	}
+	if (module_load_func) {
+		releasestringchars(load_func, module_load_func);
+	}
+	if (module_file) {
+		releasestringchars(load_func, module_file);
+	}
+	if (module_name) {
+		releasestringchars(mod_name, module_name);
+	}
+	
+	return 0;
+}
+
 /* ---- Load and dump ---- */
 /* lua_load() */
 JNIEXPORT void JNICALL Java_com_naef_jnlua_LuaState_lua_1load (JNIEnv *env, jobject obj, jobject inputStream, jstring chunkname, jstring mode) {
@@ -1754,6 +1822,9 @@ JNIEXPORT jstring JNICALL Java_com_naef_jnlua_LuaState_00024LuaDebug_lua_1debugn
 	ar = getluadebug(obj);
 	return ar != NULL && ar->namewhat != NULL ? (*env)->NewStringUTF(env, ar->namewhat) : NULL;
 }
+
+
+
 
 /* ---- JNI ---- */
 /* Handles the loading of this library. */
