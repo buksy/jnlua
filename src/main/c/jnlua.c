@@ -2,7 +2,6 @@
  * $Id: jnlua.c 157 2012-10-05 23:00:17Z andre@naef.com $
  * See LICENSE.txt for license terms.
  */
-
 #include <stdlib.h>
 #include <string.h>
 #include <setjmp.h>
@@ -18,10 +17,14 @@
 #endif
 #ifdef LUA_USE_LINUX
 #include <stdint.h>
+#include <dlfcn.h>
 #define JNLUA_THREADLOCAL static __thread
+#define JNLUA_USE_DL_OPEN
 #endif
 #ifdef LUA_USE_MACOSX
-#define JNLUA_THREADLOCAL static 
+#include <dlfcn.h>
+#define JNLUA_THREADLOCAL static __thread
+#define JNLUA_USE_DL_OPEN
 #endif
 
 /* ---- Definitions ---- */
@@ -366,10 +369,10 @@ JNIEXPORT void JNICALL Java_com_naef_jnlua_LuaState_lua_1openlib (JNIEnv *env, j
 JNIEXPORT jint JNICALL Java_com_naef_jnlua_LuaState_lua_1open_1C_1module
 (JNIEnv *env, jobject obj, jstring mod_name, jstring load_func, jstring mod_file){
 	lua_State *L;
-	
-	char *module_load_func = NULL;
-	char *module_file = NULL;
-	char *module_name = NULL;
+	int ret = 0;
+	const char *module_load_func = NULL ;
+	const char *module_file  = NULL;
+	const char *module_name  = NULL;
 	
 	JNLUA_ENV(env);
 	L = getluathread(obj);
@@ -377,51 +380,80 @@ JNIEXPORT jint JNICALL Java_com_naef_jnlua_LuaState_lua_1open_1C_1module
 		&& (module_load_func = getstringchars(load_func)) 
 		&& (module_file = getstringchars(mod_file))
 		&& (module_name = getstringchars(mod_name))) {
+	    lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
+	    lua_getfield(L, 2, module_name);  /* _LOADED[name] */
+	    
+	    if (!lua_toboolean(L, -1))  {/* is it there? */
+		lua_CFunction loader = NULL;
+#ifdef JNLUA_USE_DL_OPEN 
+		// Both mac and linux do support dlopen
+		void *handle = dlopen(module_file, RTLD_LAZY);
+		if (handle) 
+		  loader = (lua_CFunction ) dlsym (handle, module_load_func);
+		else 
+		  luaL_error (L, "Could not load the module '%s' library due to %s", mod_name, dlerror());
 		
-		JNLUA_PCALL(L, 0, 1);
+		dlerror();
+#else
+		// Need to write the win equelant
+#endif
+
+		if (loader) {
+		  lua_pushcfunction (L, loader);
+		  JNLUA_PCALL(L, 0, 1);
+		  if (!lua_isnil(L, -1)) {
+		    luaL_getsubtable(L, LUA_REGISTRYINDEX, "_LOADED");
+		    lua_pushvalue(L, -2);  /* make copy of module (call result) */
+		    lua_setfield(L, -2, module_name);  /* _LOADED[modname] = module */
+		    lua_pop(L, 1);  /* remove _LOADED table */
+		  }
+		}else
+		  ret = -1;
+	    }	
 	}
 	if (module_load_func) {
 		releasestringchars(load_func, module_load_func);
 	}
 	if (module_file) {
-		releasestringchars(load_func, module_file);
+		releasestringchars(mod_file, module_file);
 	}
 	if (module_name) {
 		releasestringchars(mod_name, module_name);
 	}
 	
-	return 0;
+	return ret;
 }
 
-/*
- * Class:     com_naef_jnlua_LuaState
- * Method:    lua_open_LUA_module
- * Signature: (Ljava/lang/String;Ljava/lang/String;)I
- */
+/* */
 JNIEXPORT jint JNICALL Java_com_naef_jnlua_LuaState_lua_1open_1LUA_1module
 (JNIEnv *env, jobject obj, jstring mod_name, jstring mod_file){
 	lua_State *L;
+		
 	
-	lua_State *L;
-	
-	char *module_load_func = NULL;
-	char *module_file = NULL;
-	char *module_name = NULL;
+	const char *module_file = NULL;
+	const char *module_name = NULL;
 	
 	JNLUA_ENV(env);
 	L = getluathread(obj);
-	if (checkstack(L, JNLUA_MINSTACK)
-		&& (module_load_func = getstringchars(load_func)) 
+	if (checkstack(L, JNLUA_MINSTACK) 
 		&& (module_file = getstringchars(mod_file))
 		&& (module_name = getstringchars(mod_name))) {
-		
+	    lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
+	    lua_getfield(L, 2, module_name);  /* _LOADED[name] */
+	    
+	    if (!lua_toboolean(L, -1))  {/* is it there? */
+		luaL_loadfile (L, module_file);
 		JNLUA_PCALL(L, 0, 1);
-	}
-	if (module_load_func) {
-		releasestringchars(load_func, module_load_func);
+		if (!lua_isnil(L, -1)) {
+		    luaL_getsubtable(L, LUA_REGISTRYINDEX, "_LOADED");
+		    lua_pushvalue(L, -2);  /* make copy of module (call result) */
+		    lua_setfield(L, -2, module_name);  /* _LOADED[modname] = module */
+		    lua_pop(L, 1);  /* remove _LOADED table */
+		  }
+	    }
 	}
 	if (module_file) {
-		releasestringchars(load_func, module_file);
+		releasestringchars(mod_file, module_file);
 	}
 	if (module_name) {
 		releasestringchars(mod_name, module_name);
