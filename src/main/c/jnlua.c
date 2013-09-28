@@ -380,7 +380,7 @@ JNIEXPORT jint JNICALL Java_com_naef_jnlua_LuaState_lua_1open_1C_1module
 		&& (module_load_func = getstringchars(load_func)) 
 		&& (module_file = getstringchars(mod_file))
 		&& (module_name = getstringchars(mod_name))) {
-	    lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
+	    luaL_getsubtable(L, LUA_REGISTRYINDEX, "_LOADED");
 	    lua_getfield(L, 2, module_name);  /* _LOADED[name] */
 	    
 	    if (!lua_toboolean(L, -1))  {/* is it there? */
@@ -391,8 +391,22 @@ JNIEXPORT jint JNICALL Java_com_naef_jnlua_LuaState_lua_1open_1C_1module
 		if (handle) 
 		  loader = (lua_CFunction ) dlsym (handle, module_load_func);
 		else 
+		{
+		  if (module_load_func) {
+			  releasestringchars(load_func, module_load_func);
+			  module_load_func = NULL;
+		  }
+		  if (module_file) {
+			  releasestringchars(mod_file, module_file);
+			  module_file = NULL;
+		  }
+		  if (module_name) {
+			  releasestringchars(mod_name, module_name);
+			  module_name = NULL;
+		  }
 		  luaL_error (L, "Could not load the module '%s' library due to %s", mod_name, dlerror());
-		
+		  
+		}
 		dlerror();
 #else
 		// Need to write the win equelant
@@ -409,7 +423,7 @@ JNIEXPORT jint JNICALL Java_com_naef_jnlua_LuaState_lua_1open_1C_1module
 		  }
 		}else
 		  ret = -1;
-	    }	
+	    }
 	}
 	if (module_load_func) {
 		releasestringchars(load_func, module_load_func);
@@ -438,9 +452,8 @@ JNIEXPORT jint JNICALL Java_com_naef_jnlua_LuaState_lua_1open_1LUA_1module
 	if (checkstack(L, JNLUA_MINSTACK) 
 		&& (module_file = getstringchars(mod_file))
 		&& (module_name = getstringchars(mod_name))) {
-	    lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
+	    luaL_getsubtable(L, LUA_REGISTRYINDEX, "_LOADED");
 	    lua_getfield(L, 2, module_name);  /* _LOADED[name] */
-	    
 	    if (!lua_toboolean(L, -1))  {/* is it there? */
 		luaL_loadfile (L, module_file);
 		JNLUA_PCALL(L, 0, 1);
